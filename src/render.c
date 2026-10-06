@@ -3,24 +3,38 @@
 
 #include <math.h>
 
+static void paint_cover(cairo_t *cr, cairo_surface_t *surface, double w, double h, double alpha) {
+    int bw = cairo_image_surface_get_width(surface);
+    int bh = cairo_image_surface_get_height(surface);
+    if (bw < 1 || bh < 1) return;
+    double scale = w / bw; if (h / bh > scale) scale = h / bh;
+    cairo_save(cr);
+    cairo_translate(cr, (w - bw * scale) / 2.0, (h - bh * scale) / 2.0);
+    cairo_scale(cr, scale, scale);
+    cairo_set_source_surface(cr, surface, 0, 0);
+    if (alpha >= 1.0) cairo_paint(cr);
+    else cairo_paint_with_alpha(cr, alpha);
+    cairo_restore(cr);
+}
+
 void loginui_render(cairo_t *cr, const LoginUiState *st,
                     double *card_x_out, double *card_y_out,
                     double *card_w_out, double *card_h_out) {
     double w = st->width, h = st->height;
 
     if (st->background) {
-        int bw = cairo_image_surface_get_width(st->background);
-        int bh = cairo_image_surface_get_height(st->background);
-        double scale = w / bw; if (h / bh > scale) scale = h / bh;
-        cairo_save(cr);
-        cairo_translate(cr, (w - bw * scale) / 2.0, (h - bh * scale) / 2.0);
-        cairo_scale(cr, scale, scale);
-        cairo_set_source_surface(cr, st->background, 0, 0);
-        cairo_paint(cr);
-        cairo_restore(cr);
+        paint_cover(cr, st->background, w, h, 1.0);
     } else {
         cairo_set_source_rgb(cr, 0.10, 0.10, 0.11);
         cairo_paint(cr);
+    }
+    if (st->background_sharp && st->sharpness > 0.0)
+        paint_cover(cr, st->background_sharp, w, h, st->sharpness > 1.0 ? 1.0 : st->sharpness);
+
+    bool faded = st->content_fade > 0.0;
+    if (faded) {
+        if (st->content_fade >= 1.0) return;
+        cairo_push_group(cr);
     }
 
     const char *tbuf = st->time_str ? st->time_str : "";
@@ -49,9 +63,12 @@ void loginui_render(cairo_t *cr, const LoginUiState *st,
     if (card_h_out) *card_h_out = card_h;
 
     double clock_block_h = th + 6 + dh;
-    double clock_y = (h - clock_block_h) / 2.0;
+    double clock_y = (h - clock_block_h) / 2.0 + st->clock_dy;
     lui_draw_text(cr, "Sans Bold 60", tbuf, clock_right, clock_y, 2, 1, 1, 1);
     lui_draw_text(cr, "Sans 18", dbuf, clock_right, clock_y + th + 6, 2, 0.85, 0.85, 0.88);
+
+    cairo_save(cr);
+    cairo_translate(cr, st->card_dx, 0);
 
     lui_rounded_rect(cr, card_x, card_y, card_w, card_h, 24);
     cairo_set_source_rgba(cr, 0.176, 0.176, 0.176, 0.97);
@@ -120,6 +137,12 @@ void loginui_render(cairo_t *cr, const LoginUiState *st,
             lui_draw_text(cr, "Sans 12", st->status_text, fx + fw / 2.0, sy + (sh - sht) / 2.0, 1, 0.97, 0.52, 0.48);
         else
             lui_draw_text(cr, "Sans 12", st->status_text, fx + fw / 2.0, sy + (sh - sht) / 2.0, 1, 0.82, 0.82, 0.85);
+    }
+    cairo_restore(cr);
+
+    if (faded) {
+        cairo_pop_group_to_source(cr);
+        cairo_paint_with_alpha(cr, 1.0 - st->content_fade);
     }
 }
 

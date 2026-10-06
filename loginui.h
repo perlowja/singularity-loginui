@@ -31,6 +31,11 @@ typedef struct {
     const char *status_text;
     bool status_error;
     const char *auth_label; /* field label + placeholder; NULL -> "Password" */
+    cairo_surface_t *background_sharp;
+    double sharpness;
+    double clock_dy;
+    double card_dx;
+    double content_fade;
 } LoginUiState;
 
 /* align: 0 left, 1 centre, 2 right. */
@@ -39,6 +44,20 @@ void loginui_render(cairo_t *cr, const LoginUiState *st,
 void loginui_render_splash(cairo_t *cr, int width, int height,
                            cairo_surface_t *bg, cairo_surface_t *logo,
                            double phase);
+#define LOGINUI_BRAND_RED 0.05
+#define LOGINUI_BRAND_GREEN 0.05
+#define LOGINUI_BRAND_BLUE 0.07
+#define LOGINUI_BRAND_LOGO_SIZE 256
+#define LOGINUI_BRAND_LOGO_PATH "/usr/share/singularity/splash-logo.png"
+#define LOGINUI_MOTION_SMALL_MS 140
+#define LOGINUI_MOTION_SCENE_MS 600
+
+cairo_surface_t *loginui_load_brand_logo(void);
+void loginui_render_brand(cairo_t *cr, int width, int height,
+                          cairo_surface_t *logo, double track_alpha,
+                          double phase);
+bool loginui_reduced_motion(void);
+double loginui_scene_seconds(void);
 void loginui_rounded_rect(cairo_t *cr, double x, double y, double w, double h, double r);
 void loginui_text(cairo_t *cr, const char *font, const char *text,
                   double x, double y, int align, double r, double g, double b);

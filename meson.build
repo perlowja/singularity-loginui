@@ -10,12 +10,14 @@ loginui_deps = [
   dependency('cairo'),
   dependency('pangocairo'),
   dependency('gdk-pixbuf-2.0'),
+  dependency('gio-2.0'),
   dependency('wayland-client'),
   cc.find_library('m', required: false),
 ]
 
 loginui_sources = files(
   'src/image.c',
+  'src/brand.c',
   'src/buffer.c',
   'src/draw.c',
   'src/render.c',
@@ -35,7 +37,7 @@ pkgconfig.generate(loginui_lib,
   name: 'singularity-loginui',
   description: 'Shared Cairo render library for the Singularity login surfaces',
   filebase: 'singularity-loginui',
-  requires: ['cairo', 'pangocairo', 'gdk-pixbuf-2.0', 'wayland-client'],
+  requires: ['cairo', 'pangocairo', 'gdk-pixbuf-2.0', 'gio-2.0', 'wayland-client'],
 )
 
 loginui_dep = declare_dependency(
