@@ -8,7 +8,8 @@
 cairo_surface_t *loginui_load_brand_logo(void) {
     const char *path = getenv("SINGULARITY_SPLASH_LOGO");
     if (!path || !path[0]) path = LOGINUI_BRAND_LOGO_PATH;
-    return loginui_load_image(path, LOGINUI_BRAND_LOGO_SIZE, LOGINUI_BRAND_LOGO_SIZE);
+    /* Wide marks need more than LOGO_SIZE pixels of width to stay sharp. */
+    return loginui_load_image(path, LOGINUI_BRAND_LOGO_SIZE * 4, LOGINUI_BRAND_LOGO_SIZE);
 }
 
 void loginui_render_brand(cairo_t *cr, int width, int height,
@@ -22,14 +23,21 @@ void loginui_render_brand(cairo_t *cr, int width, int height,
 
     double size = LOGINUI_BRAND_LOGO_SIZE;
     double top = floor((h - size) / 2.0);
+    double logo_h = size;
     if (logo) {
         int lw = cairo_image_surface_get_width(logo);
         int lh = cairo_image_surface_get_height(logo);
         if (lw > 0 && lh > 0) {
+            /* One scale factor over a box so wide marks keep their aspect. */
+            double box_w = fmin(w * 0.5, size * 3.0);
+            double s = fmin(box_w / lw, size / lh);
+            double dw = lw * s, dh = lh * s;
+            logo_h = dh;
             cairo_save(cr);
-            cairo_translate(cr, floor((w - size) / 2.0), top);
-            cairo_scale(cr, size / lw, size / lh);
+            cairo_translate(cr, floor((w - dw) / 2.0), floor(top + (size - dh) / 2.0));
+            cairo_scale(cr, s, s);
             cairo_set_source_surface(cr, logo, 0, 0);
+            cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_BEST);
             cairo_paint(cr);
             cairo_restore(cr);
         }
@@ -38,7 +46,7 @@ void loginui_render_brand(cairo_t *cr, int width, int height,
     if (track_alpha > 0.0) {
         double track_w = 220, track_h = 4, r = track_h / 2.0;
         double track_x = w / 2.0 - track_w / 2.0;
-        double track_y = top + size + 48;
+        double track_y = top + (size + logo_h) / 2.0 + 48;
         lui_rounded_rect(cr, track_x, track_y, track_w, track_h, r);
         cairo_set_source_rgba(cr, 1, 1, 1, 0.12 * track_alpha);
         cairo_fill(cr);
