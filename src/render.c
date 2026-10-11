@@ -159,11 +159,19 @@ void loginui_render_splash(cairo_t *cr, int width, int height,
 
     double cx = w / 2.0;
 
+    double unit = h / 1080.0;
+    if (unit < 1.0) unit = 1.0;
+    if (unit > 4.0) unit = 4.0;
+
     if (logo) {
         int lw = cairo_image_surface_get_width(logo);
         int lh = cairo_image_surface_get_height(logo);
-        double target = h * 0.16;
-        double scale = lh > 0 ? target / lh : 1.0;
+        double scale = 1.0;
+        if (lw > 0 && lh > 0) {
+            double sh = (h * 0.16) / lh;
+            double sw = (w * 0.60) / lw;
+            scale = sh < sw ? sh : sw;
+        }
         double dw = lw * scale, dh = lh * scale;
         cairo_save(cr);
         cairo_translate(cr, cx - dw / 2.0, h * 0.46 - dh / 2.0);
@@ -173,7 +181,8 @@ void loginui_render_splash(cairo_t *cr, int width, int height,
         cairo_restore(cr);
     }
 
-    double track_w = 220, track_h = 4;
+    double track_w = 220 * unit, track_h = 4 * unit;
+    if (track_w > w * 0.60) track_w = w * 0.60;
     double track_x = cx - track_w / 2.0;
     double track_y = h * 0.62;
     double r = track_h / 2.0;
