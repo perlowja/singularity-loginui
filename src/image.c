@@ -12,6 +12,7 @@ static GdkPixbuf *box_blur(GdkPixbuf *src, int radius) {
     int count = 2 * radius + 1;
 
     GdkPixbuf *tmp = gdk_pixbuf_new(GDK_COLORSPACE_RGB, gdk_pixbuf_get_has_alpha(src), 8, w, h);
+    if (!tmp) return NULL;
     int trs = gdk_pixbuf_get_rowstride(tmp);
     guint8 *t = gdk_pixbuf_get_pixels(tmp);
     for (int y = 0; y < h; y++) {
@@ -32,6 +33,10 @@ static GdkPixbuf *box_blur(GdkPixbuf *src, int radius) {
         }
     }
     GdkPixbuf *dst = gdk_pixbuf_new(GDK_COLORSPACE_RGB, gdk_pixbuf_get_has_alpha(src), 8, w, h);
+    if (!dst) {
+        g_object_unref(tmp);
+        return NULL;
+    }
     int drs = gdk_pixbuf_get_rowstride(dst);
     guint8 *d = gdk_pixbuf_get_pixels(dst);
     for (int x = 0; x < w; x++) {
@@ -59,6 +64,10 @@ static cairo_surface_t *pixbuf_to_surface(GdkPixbuf *pb) {
     int prs = gdk_pixbuf_get_rowstride(pb);
     const guint8 *pix = gdk_pixbuf_get_pixels(pb);
     cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+    if (cairo_surface_status(s) != CAIRO_STATUS_SUCCESS) {
+        cairo_surface_destroy(s);
+        return NULL;
+    }
     unsigned char *data = cairo_image_surface_get_data(s);
     int crs = cairo_image_surface_get_stride(s);
     for (int y = 0; y < h; y++) {
@@ -78,9 +87,11 @@ cairo_surface_t *loginui_load_wallpaper(const char *path, int target_w) {
     GdkPixbuf *pb = gdk_pixbuf_new_from_file_at_scale(path, target_w > 0 ? target_w : 960, -1, TRUE, NULL);
     if (!pb) return NULL;
     GdkPixbuf *b1 = box_blur(pb, 16);
-    GdkPixbuf *b2 = box_blur(b1, 16);
     g_object_unref(pb);
+    if (!b1) return NULL;
+    GdkPixbuf *b2 = box_blur(b1, 16);
     g_object_unref(b1);
+    if (!b2) return NULL;
     cairo_surface_t *s = pixbuf_to_surface(b2);
     g_object_unref(b2);
     return s;
@@ -105,6 +116,11 @@ cairo_surface_t *loginui_load_image(const char *path, int max_w, int max_h) {
     int prs = gdk_pixbuf_get_rowstride(pb);
     const guint8 *pix = gdk_pixbuf_get_pixels(pb);
     cairo_surface_t *s = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, w, h);
+    if (cairo_surface_status(s) != CAIRO_STATUS_SUCCESS) {
+        cairo_surface_destroy(s);
+        g_object_unref(pb);
+        return NULL;
+    }
     unsigned char *data = cairo_image_surface_get_data(s);
     int crs = cairo_image_surface_get_stride(s);
     for (int y = 0; y < h; y++) {
