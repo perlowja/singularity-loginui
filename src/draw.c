@@ -3,10 +3,17 @@
 
 #include <pango/pangocairo.h>
 
+static PangoFontDescription *lui_font(const char *desc) {
+    PangoFontDescription *fd = pango_font_description_from_string(desc);
+    if (!pango_font_description_get_family(fd))
+        pango_font_description_set_family(fd, "Sans");
+    return fd;
+}
+
 void lui_draw_text(cairo_t *cr, const char *desc, const char *text,
                    double x, double y, int align, double r, double g, double b) {
     PangoLayout *layout = pango_cairo_create_layout(cr);
-    PangoFontDescription *fd = pango_font_description_from_string(desc);
+    PangoFontDescription *fd = lui_font(desc);
     pango_layout_set_font_description(layout, fd);
     pango_font_description_free(fd);
     pango_layout_set_text(layout, text, -1);
@@ -23,7 +30,7 @@ void lui_draw_text(cairo_t *cr, const char *desc, const char *text,
 
 void lui_text_size(cairo_t *cr, const char *desc, const char *text, int *w, int *h) {
     PangoLayout *layout = pango_cairo_create_layout(cr);
-    PangoFontDescription *fd = pango_font_description_from_string(desc);
+    PangoFontDescription *fd = lui_font(desc);
     pango_layout_set_font_description(layout, fd);
     pango_font_description_free(fd);
     pango_layout_set_text(layout, text, -1);

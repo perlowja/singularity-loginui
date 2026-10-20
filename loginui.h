@@ -44,9 +44,9 @@ void loginui_render(cairo_t *cr, const LoginUiState *st,
 void loginui_render_splash(cairo_t *cr, int width, int height,
                            cairo_surface_t *bg, cairo_surface_t *logo,
                            double phase);
-#define LOGINUI_BRAND_RED 0.05
-#define LOGINUI_BRAND_GREEN 0.05
-#define LOGINUI_BRAND_BLUE 0.07
+#define LOGINUI_BRAND_RED 0.0
+#define LOGINUI_BRAND_GREEN 0.0
+#define LOGINUI_BRAND_BLUE 0.0
 #define LOGINUI_BRAND_LOGO_SIZE 256
 #define LOGINUI_BRAND_LOGO_PATH "/usr/share/singularity/splash-logo.png"
 #define LOGINUI_MOTION_SMALL_MS 140
@@ -57,6 +57,23 @@ void loginui_render_brand(cairo_t *cr, int width, int height,
                           cairo_surface_t *logo, double track_alpha,
                           double phase);
 bool loginui_reduced_motion(void);
+
+typedef struct {
+    double logo_x, logo_y, logo_size;
+    double bar_x, bar_y, bar_w, bar_h;
+} LoginUiBrandLayout;
+
+#define LOGINUI_PROGRESS_PATH "/run/boot-progress"
+
+void loginui_brand_layout(double width, double height, double scale,
+                          LoginUiBrandLayout *out);
+void loginui_render_brand_progress(cairo_t *cr, int width, int height,
+                                   double scale, cairo_surface_t *logo,
+                                   double progress, double bar_alpha);
+double loginui_progress_curve(double from, double to, double elapsed,
+                              double tau);
+bool loginui_progress_read(const char *path, double *value);
+void loginui_progress_write(const char *path, double value);
 double loginui_scene_seconds(void);
 void loginui_rounded_rect(cairo_t *cr, double x, double y, double w, double h, double r);
 void loginui_text(cairo_t *cr, const char *font, const char *text,
