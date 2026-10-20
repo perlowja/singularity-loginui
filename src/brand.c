@@ -22,15 +22,15 @@ void loginui_render_brand(cairo_t *cr, int width, int height,
     cairo_set_source_rgb(cr, LOGINUI_BRAND_RED, LOGINUI_BRAND_GREEN, LOGINUI_BRAND_BLUE);
     cairo_paint(cr);
 
-    double size = LOGINUI_BRAND_LOGO_SIZE;
-    double top = floor((h - size) / 2.0);
+    LoginUiBrandLayout l;
+    loginui_brand_layout(w, h, 1.0, &l);
     if (logo) {
         int lw = cairo_image_surface_get_width(logo);
         int lh = cairo_image_surface_get_height(logo);
         if (lw > 0 && lh > 0) {
             cairo_save(cr);
-            cairo_translate(cr, floor((w - size) / 2.0), top);
-            cairo_scale(cr, size / lw, size / lh);
+            cairo_translate(cr, l.logo_x, l.logo_y);
+            cairo_scale(cr, l.logo_size / lw, l.logo_size / lh);
             cairo_set_source_surface(cr, logo, 0, 0);
             cairo_paint(cr);
             cairo_restore(cr);
@@ -38,15 +38,13 @@ void loginui_render_brand(cairo_t *cr, int width, int height,
     }
 
     if (track_alpha > 0.0) {
-        double track_w = 220, track_h = 4, r = track_h / 2.0;
-        double track_x = w / 2.0 - track_w / 2.0;
-        double track_y = top + size + 48;
-        lui_rounded_rect(cr, track_x, track_y, track_w, track_h, r);
+        double r = l.bar_h / 2.0;
+        lui_rounded_rect(cr, l.bar_x, l.bar_y, l.bar_w, l.bar_h, r);
         cairo_set_source_rgba(cr, 1, 1, 1, 0.12 * track_alpha);
         cairo_fill(cr);
-        double seg_w = track_w * 0.30;
+        double seg_w = l.bar_w * 0.30;
         double t = 0.5 + 0.5 * sin(phase * 1.6);
-        lui_rounded_rect(cr, track_x + t * (track_w - seg_w), track_y, seg_w, track_h, r);
+        lui_rounded_rect(cr, l.bar_x + t * (l.bar_w - seg_w), l.bar_y, seg_w, l.bar_h, r);
         cairo_set_source_rgba(cr, 1, 1, 1, 0.85 * track_alpha);
         cairo_fill(cr);
     }
@@ -80,21 +78,19 @@ void loginui_brand_layout(double width, double height, double scale,
                           LoginUiBrandLayout *out) {
     if (scale <= 0.0) scale = 1.0;
     double pw = width * scale, ph = height * scale;
-    double k = ph >= 2000.0 ? 2.0 : (ph >= 1400.0 ? 1.5 : 1.0);
-    double size = floor(LOGINUI_BRAND_LOGO_SIZE * k);
-    if (size > pw * 0.5) size = floor(pw * 0.5);
-    if (size > ph * 0.5) size = floor(ph * 0.5);
+    double size = fmax(64.0, floor(ph * 0.12));
+    if (size > pw * 0.25) size = floor(pw * 0.25);
     double top = floor((ph - size) / 2.0);
     double left = floor((pw - size) / 2.0);
-    double bar_w = floor(size * 220.0 / 256.0);
-    double bar_h = fmax(2.0, floor(size / 64.0));
+    double bar_w = floor(size * 1.4);
+    double bar_h = fmax(2.0, floor(size / 48.0));
     out->logo_size = size / scale;
     out->logo_x = left / scale;
     out->logo_y = top / scale;
     out->bar_w = bar_w / scale;
     out->bar_h = bar_h / scale;
     out->bar_x = floor((pw - bar_w) / 2.0) / scale;
-    out->bar_y = (top + size + floor(size * 48.0 / 256.0)) / scale;
+    out->bar_y = (top + size + floor(size * 0.45)) / scale;
 }
 
 void loginui_render_brand_progress(cairo_t *cr, int width, int height,
